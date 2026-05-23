@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: geolvix-db
+    restart: always
+    environment:
+      POSTGRES_USER: geolvix_user
+      POSTGRES_PASSWORD: geolvix_password
+      POSTGRES_DB: geolvix_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Carrega o script de migração DDL inicial automaticamente na primeira inicialização do container
+      - ./db/migration/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql
+    networks:
+      - geolvix-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U geolvix_user -d geolvix_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: geolvix-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - geolvix-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+
+networks:
+  geolvix-network:
+    driver: bridge
