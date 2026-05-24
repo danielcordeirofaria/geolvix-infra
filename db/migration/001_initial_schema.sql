@@ -8,6 +8,9 @@ CREATE TABLE organizacoes (
     cnpj VARCHAR(14) UNIQUE NOT NULL,
     limite_propriedades INT NOT NULL DEFAULT 3, -- Trava física do modelo de cobrança
     plano_status VARCHAR(50) DEFAULT 'ACTIVE',
+    plano_nome VARCHAR(100),
+    mensalidade NUMERIC(10,2) DEFAULT 0,
+    bonus_propriedades INT NOT NULL DEFAULT 0,
     data_assinatura DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -121,10 +124,11 @@ CREATE POLICY tenant_analises_policy ON analises_eudr
     );
 
 -- 7. Seeds iniciais para Desenvolvimento (UUIDs estáticos de desenvolvimento)
-INSERT INTO organizacoes (id, razao_social, cnpj, limite_propriedades, plano_status)
-VALUES ('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'Geolvix Holding Ltda', '12345678000199', 10, 'ACTIVE')
+INSERT INTO organizacoes (id, razao_social, cnpj, limite_propriedades, plano_status, plano_nome, mensalidade)
+VALUES ('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'Geolvix Holding Ltda', '12345678000199', 10, 'ACTIVE', 'Enterprise', 0)
 ON CONFLICT (cnpj) DO NOTHING;
 
+-- Senha: Admin@123! (BCrypt hash)
 INSERT INTO usuarios (id, organizacao_id, nome, email, senha_hash, role, ativo)
-VALUES ('f47170f1-e5d7-4632-a54f-a496fb428456', 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'Daniel Faria', 'daniel.faria@geolvix.com', 'admin123', 'SUPERADMIN', true)
+VALUES ('f47170f1-e5d7-4632-a54f-a496fb428456', 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'Daniel Faria', 'daniel.faria@geolvix.com', '$2b$10$7l4qImT7KD.QVJgFyVsFHu9E.7SCBxqnWUqUWTzoF3I.D3ABHvYH2', 'ROLE_SUPERADMIN', true)
 ON CONFLICT (email) DO NOTHING;
