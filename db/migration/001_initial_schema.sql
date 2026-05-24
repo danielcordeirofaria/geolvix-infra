@@ -20,7 +20,9 @@ CREATE TABLE usuarios (
     email VARCHAR(255) UNIQUE NOT NULL,
     senha_hash VARCHAR(512) NOT NULL,
     role VARCHAR(50) NOT NULL, -- 'SUPERADMIN', 'ADMIN', 'OPERADOR', 'VISUALIZADOR'
-    ativo BOOLEAN DEFAULT TRUE,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted_at TIMESTAMP, -- Soft delete: preenchido quando admin desativa o usuário. NULL = ativo.
+    solicitacao_exclusao_at TIMESTAMP, -- LGPD Art.18 VI: data da solicitação formal de exclusão de dados. NULL = sem solicitação.
     termo_aceito_versao VARCHAR(50), -- LGPD: Versão da política de privacidade aceita
     termo_aceito_timestamp TIMESTAMP, -- LGPD: Data/hora do aceite eletrônico
     termo_aceito_ip VARCHAR(45), -- LGPD: IP de origem do aceite para auditoria
@@ -44,6 +46,15 @@ CREATE TABLE propriedades_rurais (
 
 -- Índice espacial GIST essencial para consultas geográficas de alta performance
 CREATE INDEX idx_propriedades_geometria ON propriedades_rurais USING GIST (geometria);
+
+-- Índices de soft delete e LGPD na tabela usuarios
+CREATE INDEX idx_usuarios_solicitacao_exclusao
+    ON usuarios (organizacao_id, solicitacao_exclusao_at)
+    WHERE solicitacao_exclusao_at IS NOT NULL;
+
+CREATE INDEX idx_usuarios_org_ativo
+    ON usuarios (organizacao_id, ativo)
+    WHERE ativo = TRUE;
 
 -- 4. Histórico de Análises Satelitais (Laudos Emitidos)
 CREATE TABLE analises_eudr (
