@@ -44,6 +44,11 @@ CREATE TABLE propriedades_rurais (
     -- LGPD (Minimização): Dados de pessoas físicas (Produtor Rural) são opcionais e armazenados criptografados
     produtor_nome_criptografado VARCHAR(512),
     produtor_cpf_criptografado VARCHAR(512),
+    -- Baseline EUDR (31/12/2020): salvo na primeira análise e nunca alterado
+    -- Serve de referência permanente para detectar desmatamento posterior ao corte EUDR
+    ndvi_baseline NUMERIC(5,4),                -- NDVI médio da imagem baseline (ex: 0.6523)
+    data_imagem_baseline DATE,                 -- Data real da imagem usada (pode ser anterior a 31/12/2020 se havia nuvens)
+    chave_imagem_baseline VARCHAR(512),        -- Chave OCI do mapa NDVI colorido do baseline (ex: imagens/uuid/baseline_2020-12-15.png)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -66,6 +71,10 @@ CREATE TABLE analises_eudr (
     status_verificacao VARCHAR(50) NOT NULL, -- 'CONFORME', 'DESMATAMENTO_DETECTADO', 'ERRO_PROCESSO'
     url_laudo_pdf VARCHAR(512),
     indice_ndvi_medio NUMERIC(5,4),
+    cloud_pct_baseline NUMERIC(5,2),        -- Cobertura de nuvens (%) na imagem baseline
+    cloud_pct_atual NUMERIC(5,2),           -- Cobertura de nuvens (%) na imagem atual
+    alerta_nuvens BOOLEAN DEFAULT FALSE,    -- TRUE se cobertura de nuvens excedeu o limite configurado
+    chave_imagem_atual VARCHAR(512),         -- Chave OCI do mapa NDVI colorido desta análise (ex: imagens/uuid/analise_2026-05-24.png)
     data_analise TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

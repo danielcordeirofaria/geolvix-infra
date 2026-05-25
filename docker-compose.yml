@@ -13,8 +13,10 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # Carrega o schema DDL completo automaticamente na primeira inicialização do container
       - ./db/migration/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql
+      - ./db/migration/002_soft_delete_usuarios.sql:/docker-entrypoint-initdb.d/002_soft_delete_usuarios.sql
+      - ./db/migration/003_cloud_coverage.sql:/docker-entrypoint-initdb.d/003_cloud_coverage.sql
+      - ./db/migration/004_eudr_dds_fields.sql:/docker-entrypoint-initdb.d/004_eudr_dds_fields.sql
     networks:
       - geolvix-network
     healthcheck:
@@ -38,6 +40,81 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  gis-ingestion:
+    build:
+      context: ../geolvix-gis-ingestion
+      dockerfile: Dockerfile
+    image: geolvix-gis-ingestion:dev
+    container_name: geolvix-gis-ingestion
+    restart: unless-stopped
+    env_file:
+      - ../geolvix-gis-ingestion/.env
+    ports:
+      - "8001:8001"
+    networks:
+      - geolvix-network
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/api/v1/gis/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  core:
+    build:
+      context: ../geolvix-core
+      dockerfile: Dockerfile
+    image: geolvix-core:dev
+    container_name: geolvix-core
+    restart: unless-stopped
+    env_file:
+      - ../geolvix-core/.env
+    ports:
+      - "8080:8080"
+    networks:
+      - geolvix-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  satellite-worker:
+    build:
+      context: ../geolvix-satellite-worker
+      dockerfile: Dockerfile
+    image: geolvix-satellite-worker:dev
+    container_name: geolvix-satellite-worker
+    restart: unless-stopped
+    env_file:
+      - ../geolvix-satellite-worker/.env
+    ports:
+      - "8002:8002"
+    networks:
+      - geolvix-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      core:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8002/api/v1/internal/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
 volumes:
   pgdata:
