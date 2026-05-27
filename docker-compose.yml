@@ -17,6 +17,7 @@ services:
       - ./db/migration/002_soft_delete_usuarios.sql:/docker-entrypoint-initdb.d/002_soft_delete_usuarios.sql
       - ./db/migration/003_cloud_coverage.sql:/docker-entrypoint-initdb.d/003_cloud_coverage.sql
       - ./db/migration/004_eudr_dds_fields.sql:/docker-entrypoint-initdb.d/004_eudr_dds_fields.sql
+      - ./db/migration/005_commodity_per_analise.sql:/docker-entrypoint-initdb.d/005_commodity_per_analise.sql
     networks:
       - geolvix-network
     healthcheck:
@@ -100,6 +101,8 @@ services:
       - ../geolvix-satellite-worker/.env
     ports:
       - "8002:8002"
+    volumes:
+      - mock-storage:/tmp/geolvix-storage
     networks:
       - geolvix-network
     depends_on:
@@ -120,6 +123,8 @@ volumes:
   pgdata:
     driver: local
   redisdata:
+    driver: local
+  mock-storage:
     driver: local
 
 networks:
